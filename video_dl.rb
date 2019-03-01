@@ -115,7 +115,7 @@ class CH
                   log('INFO', "[#{file_name}] Finished Downloading.")
                 end
             rescue
-                  log('Error', "[#{file_name}] Failed.")
+                  log('ERROR', "[#{file_name}] Failed.")
             end
         end
 
