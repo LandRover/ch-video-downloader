@@ -1,11 +1,10 @@
 #!/usr/bin/ruby -w
 
-require 'net/http'
-require 'pp'
-require 'ruby-progressbar'
-
 require 'rubygems'
+
+require 'net/http'
 require 'nokogiri'
+require 'ruby-progressbar'
 
 url = ''
 useragent = 'Mozilla/5.0 (Linux; U; Android 2.3.4; en-us; Nexus S Build/GRJ22) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1'
