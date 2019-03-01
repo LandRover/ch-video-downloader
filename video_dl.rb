@@ -21,12 +21,6 @@ loop { case ARGV[0]
     else break
 end; }
 
-## Deep merge 2 hashes
-public
-def deep_merge(p)
-    m = proc { |key,v,vv| v.class == Hash && vv.class == Hash ? v.merge(vv, &m) : vv }
-    merge(p, &m)
-end
 
 class CH
     @url = ''
