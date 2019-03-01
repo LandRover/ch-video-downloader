@@ -55,7 +55,7 @@ class CH
         def convert_url_to_tmp_folder(tmp, url)
             uri = URI.parse(url)
 
-            return tmp + uri.path.gsub('/', '-').slice(1, url.length)
+            return tmp.concat(uri.path.gsub('/', '-').slice(1, url.length))
         end
 
 
@@ -67,13 +67,13 @@ class CH
 
 
         def download(videos)
-            File.open(@tmp_downloades + '/' + '.meta', 'w') { |file| file.write("Title: #{videos[:title]}\nPublisher: #{videos[:publisher]}\nEpisodes:#{videos[:list]}\n") }
+            File.open("#{@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nPublisher: #{videos[:publisher]}\nEpisodes:#{videos[:list]}\n") }
 
             videos[:list].each do |name, url|
-                download_file(name, url, @tmp_downloades + '/' + name);
+                download_file(name, url, "#{@tmp_downloades}/#{name}");
             end
 
-            log('INFO', 'Done downloading: ' + @url)
+            log('INFO', "Done downloading: #{@url}")
         end
 
 
