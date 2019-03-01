@@ -1,7 +1,7 @@
 #!/usr/bin/ruby -w
 
 require 'rubygems'
-
+require 'fileutils'
 require 'net/http'
 require 'nokogiri'
 require 'ruby-progressbar'
@@ -67,7 +67,7 @@ class CH
         
         
         def download(videos)
-            videos.each do |name, url|
+            videos[:list].each do |name, url|
                 download_file(name, url, @tmp_downloades + '/' + name);
             end
             
@@ -85,16 +85,19 @@ class CH
               file_size = response['content-length'].to_i
               
               if File.file?(dist) && file_size === File.size(dist) then
-                  log('WARN', "File #{file_name} already exists, skipping...");
+                  log('WARN', "[#{file_name}] already exists, skipping...");
                   next
               end
               
+              log('INFO', "[#{file_name}] Starting to download from #{url}")
               
               @pbar = ProgressBar.create(
+                    :title => file_name,
+                    :total => file_size,
+                    :rate_scale => lambda { |rate| rate * 200 },
                     :format => "%a %b\u{15E7}%i %p%% %t",
-                    :progress_mark  => ' ',
+                    :progress_mark  => '-',
                     :remainder_mark => "\u{FF65}")
-              @pbar.total = file_size
 
               File.open(dist, 'w') {|f|
                  http.get(uri.path) do |str|
@@ -106,33 +109,35 @@ class CH
                
               @pbar.finish
               
-              log('INFO', 'Downloaded '+ url)
+              log('INFO', "[#{file_name}] Finished Downloading.")
             end
         end
         
         
         def get_videos_list()
-            videos = {}
+            videos = {
+                title: '',
+                list: {}
+            }
+
             videos_selector = get_html_videos()
             
             videos_selector.each do |video|
                 text = video.css('span[itemprop="name"]').text
-                url = video.css('link[itemprop="url"]')[0]['href']
-                file_extension = File.extname(url)
+                video_url = video.css('link[itemprop="url"]')[0]['href']
+                file_extension = File.extname(video_url)
                 
-                
-                title = text
+                video_title = text
                     .slice(5...text.length)
-                    .gsub('&amp;', '&')
-                    .gsub(': ', ' - ')
-                    .gsub('. ', ' - ')
                     .concat(file_extension)
+                
+                video_title = sanitizeString(video_title)
 
-                if 1 === title.index(' - ') then
-                    title.prepend('0')
+                if 1 === video_title.index(' - ') then
+                    video_title.prepend('0')
                 end
                 
-                videos[title] = url
+                videos[:list][video_title] = video_url
             end
             
             return videos
@@ -168,7 +173,16 @@ class CH
         def createDir(dir)
             log('DEBUG', "Creating dir #{dir}")
             
-            return FileUtils.mkdir_p(dir) unless File.exists?(dir)
+            return FileUtils.mkdir_p(dir) unless File.exist?(dir)
+        end
+        
+        
+        def sanitizeString(string)
+            return string
+                    .gsub('&amp;', '&')
+                    .gsub(' : ', ' - ')
+                    .gsub(': ', ' - ')
+                    .gsub('. ', ' - ')
         end
         
         ## Genric way to print verbose
