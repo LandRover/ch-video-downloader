@@ -37,7 +37,7 @@ class CH
     def initialize(params = {})
         @url = params.fetch(:url, '')
         @useragent = params.fetch(:useragent, '')
-        @tmp_downloades = params.fetch(:tmp, convert_url_to_tmp_folder('./tmp/', @url))
+        @tmp_downloades = params.fetch(:tmp, convert_url_to_tmp_folder('./downloads/', @url))
 
         createDir(@tmp_downloades)
 
