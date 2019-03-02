@@ -186,6 +186,9 @@ class CH
                     .gsub(' : ', ' - ')
                     .gsub(': ', ' - ')
                     .gsub('. ', ' - ')
+                    .gsub('?', '')
+                    .gsub('"', "'")
+                    .gsub('/', ', ')
         end
 
         ## Genric way to print verbose
