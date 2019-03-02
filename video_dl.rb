@@ -188,6 +188,8 @@ class CH
                     .gsub('. ', ' - ')
                     .gsub('  ', ' ')
                     .gsub('?', '')
+                    .gsub(' .mp4', '.mp4')
+                    .gsub(' .webm', '.webm')
                     .gsub('"', "'")
                     .gsub('/', ', ')
         end
