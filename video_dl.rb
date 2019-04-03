@@ -108,8 +108,8 @@ class CH
 
                   log('INFO', "[#{file_name}] Finished Downloading.")
                 end
-            rescue
-                  log('ERROR', "[#{file_name}] Failed.")
+            rescue Exception => e
+                  log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
         end
 
