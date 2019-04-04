@@ -108,7 +108,11 @@ class CH
 
                   log('INFO', "[#{file_name}] Finished Downloading.")
                 end
-            rescue Exception => e
+	    rescue Net::OpenTimeout => e
+                  log('ERROR', "OpenTimeout exception [#{e}]! oh-noes!")
+	    rescue Timeout::Error => te
+                  log('ERROR', "Timeout exception [#{te}]! oh-noes!")
+            rescue => e
                   log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
         end
