@@ -130,15 +130,12 @@ class CH
                 list: {}
             }
 
-            videos_selector.each do |video|
-                text = video.css('span[itemprop="name"]').text
+            videos_selector.each_with_index do |video, index|
+                text = video.css('div.lessons-name').text
                 video_url = video.css('link[itemprop="url"]')[0]['href']
                 file_extension = File.extname(video_url)
 
-                video_title = text
-                    .slice(5...text.length)
-                    .concat(file_extension)
-
+                video_title = "#{index+1} - #{text}#{file_extension}"
                 video_title = sanitizeString(video_title)
 
                 if 1 === video_title.index(' - ') then
