@@ -121,8 +121,8 @@ class CH
         def get_videos_list()
             page = get_ch_page()
             videos_selector = page.css('ul#lessons-list li')
-            title = page.css('div.original-name').text
-            publisher = page.css('header a').text
+            title = page.css('h1.hero-title').text
+            publisher = page.css('a.course-box-value').text
 
             videos = {
                 title: sanitizeString(title),
