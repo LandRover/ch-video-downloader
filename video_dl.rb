@@ -7,7 +7,7 @@ require 'nokogiri'
 require 'ruby-progressbar'
 
 url = ''
-useragent = 'Mozilla/5.0 (Linux; U; Android 2.3.4; en-us; Nexus S Build/GRJ22) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1'
+useragent = 'Mozilla/5.0 (Linux; U; Android 2.0.0; en-us; Nexus S Build/GRJ22)'
 
 def usage(s)
     $stderr.puts(s)
@@ -61,7 +61,11 @@ class CH
 
 
         def download(videos)
-            File.open("#{@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nPublisher: #{videos[:publisher]}\nEpisodes:#{videos[:list]}\n") }
+            File.open("#{@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nPublisher: #{videos[:publisher]}\nCode files: #{videos[:code_url]}\nEpisodes:#{videos[:list]}\n") }
+			
+			## download code.
+			codeFilename = 'code.zip'
+			download_file(codeFilename, videos[:code_url], "#{@tmp_downloades}/#{codeFilename}");
 
             videos[:list].each do |name, url|
                 download_file(name, url, "#{@tmp_downloades}/#{name}");
@@ -108,9 +112,9 @@ class CH
 
                   log('INFO', "[#{file_name}] Finished Downloading.")
                 end
-	    rescue Net::OpenTimeout => e
+			rescue Net::OpenTimeout => e
                   log('ERROR', "OpenTimeout exception [#{e}]! oh-noes!")
-	    rescue Timeout::Error => te
+			rescue Timeout::Error => te
                   log('ERROR', "Timeout exception [#{te}]! oh-noes!")
             rescue => e
                   log('ERROR', "Caught exception [#{e}]! oh-noes!")
@@ -121,15 +125,18 @@ class CH
         def get_videos_list()
             page = get_ch_page()
             videos_selector = page.css('ul#lessons-list li')
+			
             title = page.css('h1.hero-title').text
             publisher = page.css('a.course-box-value').text
+			code_url = page.css('a.btn[href*="code"]')[0]['href']
 
             videos = {
                 title: sanitizeString(title),
                 publisher: sanitizeString(publisher),
+				code_url: code_url,
                 list: {}
             }
-
+			
             videos_selector.each_with_index do |video, index|
                 text = video.css('div.lessons-name').text
                 video_url = video.css('link[itemprop="url"]')[0]['href']
@@ -166,7 +173,10 @@ class CH
             http.use_ssl = true
 
             req = Net::HTTP::Get.new(uri.path, {
-                'User-Agent' => useragent
+                'User-Agent' => useragent,
+				'Cookie' => [
+
+				].join(';')
             })
             response = http.request(req)
 
