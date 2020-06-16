@@ -45,6 +45,7 @@ class CH
         load_videos();
     end
 
+
     private
         def convert_url_to_tmp_folder(tmp, url)
             uri = URI.parse(url)
@@ -63,9 +64,11 @@ class CH
         def download(videos)
             File.open("#{@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nPublisher: #{videos[:publisher]}\nCode files: #{videos[:code_url]}\nEpisodes:#{videos[:list]}\n") }
 			
-			## download code.
-			codeFilename = 'code.zip'
-			download_file(codeFilename, videos[:code_url], "#{@tmp_downloades}/#{codeFilename}");
+            ## download code.
+            unless videos[:code_url].nil? then
+                codeFilename = 'code.zip'
+                download_file(codeFilename, videos[:code_url], "#{@tmp_downloades}/#{codeFilename}");
+            end
 
             videos[:list].each do |name, url|
                 download_file(name, url, "#{@tmp_downloades}/#{name}");
@@ -128,7 +131,12 @@ class CH
 			
             title = page.css('h1.hero-title').text
             publisher = page.css('a.course-box-value').text
-			code_url = page.css('a.btn[href*="code"]')[0]['href']
+	    
+            begin
+                code_url = page.css('a.btn[href*="code"]')[0]['href']
+            rescue
+                code_url = nil
+            end
 
             videos = {
                 title: sanitizeString(title),
