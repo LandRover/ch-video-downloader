@@ -7,7 +7,7 @@ Tested on Ruby 2.7
 ## Install Prerequisites
 ```
 $ sudo apt-get install build-essential patch ruby-dev zlib1g-dev liblzma-dev
-$ gem install nokogiri
+$ gem install nokogiri ruby-progressbar
 ```
 
 ## CLI
