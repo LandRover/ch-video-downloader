@@ -26,11 +26,8 @@ end; }
 
 class CH
 	@@useragent = 'Mozilla/5.0'
-	@@cookiesList = {
-	}
+	@@cookiesList = {}
 	
-    @@tmp_downloades = ''
-
     def initialize(params = {})
 		log('DEBUG', "CH Initialized (#{params})");
     end
@@ -39,40 +36,54 @@ class CH
     def download_new(params = {})
 		url = params.fetch(:url, '')
 		
-        log('INFO', "Starting #{url}");
-		log('INFO', "cookiesList #@@cookiesList");
+        log('INFO', "Starting New Download... (#{url})");
 		
-
-        load_videos(url);
+        videos = get_videos_map(url)
+		
+		folder = "#{videos[:title]} (#{videos[:publisher]}) (AUTHOR) (#{videos[:date_release]})"
+		dst = "./downloads/#{folder}"
+		createDir(dst)
+		
+		download_videos(videos, dst)
     end
 	
 
     private
-        def load_videos(url)
-            videos = get_videos_list(url)
-
-            return download(videos)
+        def get_videos_map(url)
+			log('DEBUG', "Getting videos map from course: (#{url})");
+			
+            return get_videos_list(url)
         end
+		
 
-
-        def download(videos)
-			folder = "#{videos[:title]} (#{videos[:publisher]}) (AUTHOR) (#{videos[:date_release]})"
-            @@tmp_downloades = "./downloads/#{folder}"
-            createDir(@@tmp_downloades)
-			
-            File.open("#{@@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nURL: #{videos[:url]}\nPublisher: #{videos[:publisher]}\nCode files: #{videos[:url_code]}\nEpisodes:#{videos[:list]}\n") }
-			
-			## download code.
-			unless videos[:url_code].nil? then
+        def create_meta_file(videos, dst)
+			begin
+				File.open("#{dst}/.metadata.json", 'w') { |file| file.write(JSON.pretty_generate(videos)) }
+			rescue => e
+                  log('ERROR', "Caught exception [#{e}]! oh-noes!")
+            end
+        end
+		
+		
+        def download_attachments(attachment_url, dst)
+			unless attachment_url.nil? then
+				log('DEBUG', "Downloading course attachments: #{attachment_url}")
+				
 				codeFilename = 'code.zip'
-				download_file(codeFilename, videos[:url_code], "#{@@tmp_downloades}/#{codeFilename}");
+				download_file(codeFilename, attachment_url, "#{dst}/#{codeFilename}");
 			end
+        end
+		
 
+        def download_videos(videos, dst)
+            create_meta_file(videos, dst)
+			download_attachments(videos[:url_code], dst)
+			
             videos[:list].each do |name, url|
-                download_file(name, url, "#{@@tmp_downloades}/#{name}");
+                download_file(name, url, "#{dst}/#{name}");
             end
 
-            log('INFO', "Done downloading: #{@@url}")
+            log('INFO', "Done downloading. Course: #{videos[:title]}  |  URL: #{videos[:url]}")
         end
 
 
@@ -147,7 +158,8 @@ class CH
 
             videos = {
                 title: sanitizeString(title),
-                date_added: sanitizeString(date_added.gsub('/', '-')),
+                date_now: Time.now.strftime("%d/%m/%Y %H:%M"),
+				date_added: sanitizeString(date_added.gsub('/', '-')),
 				date_release: sanitizeString(date_release.gsub('/', '-')),
 				publisher: sanitizeString(publisher),
 				url: url,
@@ -203,7 +215,7 @@ class CH
 
 
         def createDir(dir)
-            log('DEBUG', "Creating dir #{dir}")
+            log('DEBUG', "Creating folder: #{dir}")
 
             return FileUtils.mkdir_p(dir) unless File.exist?(dir)
         end
@@ -211,17 +223,17 @@ class CH
 
         def sanitizeString(string)
             return string
-                    .gsub('&amp;', '&')
-                    .gsub(' : ', ' - ')
-                    .gsub(': ', ' - ')
-                    .gsub('. ', ' - ')
-                    .gsub(/\s+/, ' ')
-                    .gsub('?', '')
-                    .gsub(' .mp4', '.mp4')
-                    .gsub(' .webm', '.webm')
-                    .gsub('"', "'")
-                    .gsub('/', ', ')
-					.strip
+		.gsub('&amp;', '&')
+		.gsub(' : ', ' - ')
+		.gsub(': ', ' - ')
+		.gsub('. ', ' - ')
+		.gsub(/\s+/, ' ')
+		.gsub('?', '')
+		.gsub(' .mp4', '.mp4')
+		.gsub(' .webm', '.webm')
+		.gsub('"', "'")
+		.gsub('/', ', ')
+		.strip
         end
 
         ## Genric way to print verbose
