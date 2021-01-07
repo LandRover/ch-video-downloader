@@ -7,8 +7,8 @@ require 'net/http'
 require 'nokogiri'
 require 'ruby-progressbar'
 
-URL = ''
-UPDATE = false
+url = ''
+update = false
 
 
 def usage(s)
@@ -19,8 +19,8 @@ end
 
 
 loop { case ARGV[0]
-    when '-url' then  ARGV.shift; URL = ARGV.shift
-    when '-update' then  ARGV.shift; UPDATE = true
+    when '-url' then  ARGV.shift; url = ARGV.shift
+    when '-update' then  ARGV.shift; update = true
     when /^-/ then  usage("Unknown option: #{ARGV[0].inspect}")
     else break
 end; }
@@ -29,7 +29,8 @@ end; }
 class CH
     @@useragent = 'Mozilla/5.0'
 	
-    @@cookiesList = {}
+    @@cookiesList = {
+    }
 
 
     def initialize(params = {})
@@ -54,8 +55,12 @@ class CH
 
     private
         def create_meta_file(videos, dst)
+            meta_file = "#{dst}/.metadata.json"
+			
             begin
-                File.open("#{dst}/.metadata.json", 'w') { |file| file.write(JSON.pretty_generate(videos)) }
+				log('DEBUG', "Creating metadata file: #{meta_file}")
+				
+                File.open(meta_file, 'w') { |file| file.write(JSON.pretty_generate(videos)) }
             rescue => e
                   log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
@@ -80,7 +85,8 @@ class CH
                 download_file(name, url, "#{dst}/#{name}");
             end
 
-            log('INFO', "Course: #{videos[:title]}  |  URL: #{videos[:url]}")
+            log('INFO', "Course: #{videos[:title]}")
+			log('INFO', "URL: #{videos[:url]}")
 			log('INFO', "Done downloading.")
         end
 
@@ -221,7 +227,7 @@ class CH
 
 
         def createDir(dir)
-            log('DEBUG', "Creating folder: #{dir}")
+            log('DEBUG', "Creating folder: '#{dir}'")
 
             return FileUtils.mkdir_p(dir) unless File.exist?(dir)
         end
@@ -248,8 +254,8 @@ end
 
 ch = CH.new()
 
-if UPDATE == true
-    #ch.update()
+if update == true
+    ch.update(:url => url)
 else
-    ch.download_new(:url => URL)
+    ch.download_new(:url => url)
 end
