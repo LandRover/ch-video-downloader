@@ -17,7 +17,7 @@ Copy paste the below and place inside the `courses_list` map:
 
 
 declare -a courses_list=(
-"https://example.com/url/course"
+"https://ch.io/name/class"
 )
 
 CH_DL_BIN=/mnt/d/dev/ch-video-downloader/video_dl.rb
