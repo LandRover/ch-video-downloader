@@ -12,7 +12,7 @@ $ gem install nokogiri ruby-progressbar
 
 ## CLI
 ```
-$ ruby ./video_dl.rb -u https://ch.io/name/class
+$ ruby ./video_dl.rb -uurl https://ch.io/name/class [-update]
 ```
 
 
