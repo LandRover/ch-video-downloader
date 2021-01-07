@@ -28,7 +28,7 @@ end; }
 
 class CH
     @@useragent = 'Mozilla/5.0'
-	
+    
     @@cookiesList = {
     }
 
@@ -41,7 +41,7 @@ class CH
     def download_update(params = {})
         log('INFO', "Starting Update Download... (#{params})");
 
-		url = get_url_from_metadata()
+        url = get_url_from_metadata()
 
         if (url == nil)
             url = params.fetch(:url, nil)
@@ -79,7 +79,7 @@ class CH
 
         def get_url_from_metadata_JSON(dst = '.')
             meta_file = "#{dst}/.metadata.json"
-			url = nil
+            url = nil
 
             if (!File.exist?(meta_file))
                 return url
@@ -87,9 +87,9 @@ class CH
 
             begin
                 file = File.read(meta_file);
-			    videos_metadata = JSON.parse(file)
-				
-				url = videos_metadata['url']
+                videos_metadata = JSON.parse(file)
+                
+                url = videos_metadata['url']
             rescue => e
                 log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
@@ -106,10 +106,10 @@ class CH
 
         def create_meta_file(videos, dst = '.')
             meta_file = "#{dst}/.metadata.json"
-			
+            
             begin
-				log('DEBUG', "Creating metadata file: #{meta_file}")
-				
+                log('DEBUG', "Creating metadata file: #{meta_file}")
+                
                 File.open(meta_file, 'w') { |file| file.write(JSON.pretty_generate(videos)) }
             rescue => e
                 log('ERROR', "Caught exception [#{e}]! oh-noes!")
@@ -136,8 +136,8 @@ class CH
             end
 
             log('INFO', "Course: #{videos[:title]}")
-			log('INFO', "URL: #{videos[:url]}")
-			log('INFO', "Done downloading.")
+            log('INFO', "URL: #{videos[:url]}")
+            log('INFO', "Done downloading.")
         end
 
 
@@ -190,15 +190,15 @@ class CH
 
         def get_videos_list(url)
             page = get_ch_page(url)
-			log('DEBUG', "Page download completed")
+            log('DEBUG', "Page download completed")
 
             log('DEBUG', "Extracting JSON from page")
-			myPlayerArr = page.to_s.split('file: ')[2].split('poster:')[0].to_s[0..-32] + ']'
+            myPlayerArr = page.to_s.split('file: ')[2].split('poster:')[0].to_s[0..-32] + ']'
             videos_list = JSON.parse(myPlayerArr)
-			log('DEBUG', "JSON converted to MAP successfully")
-			
+            log('DEBUG', "JSON converted to MAP successfully")
+            
             log('DEBUG', "Formatting map and converting to internal structure...")
-			title = page.css('p.hero-description').text
+            title = page.css('p.hero-description').text
             publisher = page.css('a.course-box-value').text
             date_added = page.css('.course-box .course-box-item .course-box-value')[3].text.strip
 
@@ -240,14 +240,14 @@ class CH
                 videos[:list][video_title] = video_url
             end
 
-			log('DEBUG', "Formatting completed, videos map ready...")
+            log('DEBUG', "Formatting completed, videos map ready...")
 
             return videos
         end
 
 
         def get_ch_page(url)
-			log('DEBUG', "Downloading course page")
+            log('DEBUG', "Downloading course page")
 
             markup = get_html_markup(url, @@useragent, @@cookiesList);
             page = Nokogiri::HTML(markup)
@@ -286,13 +286,16 @@ class CH
         def sanitizeString(string)
             return string
                 .gsub(/\s+/, ' ')
-                .gsub('?', '')
+                .gsub(/(\?|!)/, '')
                 .gsub('&amp;', '&')
-				.gsub(/(&#039;|")/, "'")
+                .gsub(/(&#039;|"|&quot;)/, "'")
                 .gsub(/( : |: |\. )/, ' - ')
+                .gsub(/(:)/, '-')
                 .gsub(' .mp4', '.mp4')
                 .gsub(' .webm', '.webm')
-                .gsub('/', ', ')
+                .gsub(/(\/|\\)/, ', ')
+                .gsub(' , ', ', ')
+                .gsub(/\s+/, ' ')
                 .strip
         end
 
