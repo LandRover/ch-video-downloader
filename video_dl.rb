@@ -118,11 +118,11 @@ class CH
 
 
         def download_attachments(attachment_url, dst = '.')
-            unless attachment_url.nil? then
+            unless (attachment_url.nil? || attachment_url.end_with?("zip")) then
                 log('DEBUG', "Downloading course attachments: #{attachment_url}")
                 
                 codeFilename = 'code.zip'
-                download_file(codeFilename, attachment_url, "#{dst}/#{codeFilename}");
+                download_file(codeFilename, attachment_url, "#{dst}/#{codeFilename}")
             end
         end
 
@@ -306,9 +306,5 @@ class CH
 end
 
 ch = CH.new()
-
-if update == true
-    ch.download_update(:url => url)
-else
-    ch.download_new(:url => url)
-end
+ch.download_update(:url => url) if update == true
+ch.download_new(:url => url) if update == false
