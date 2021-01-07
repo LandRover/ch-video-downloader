@@ -10,75 +10,78 @@ require 'ruby-progressbar'
 URL = ''
 UPDATE = false
 
+
 def usage(s)
     $stderr.puts(s)
     $stderr.puts("Usage: #{File.basename($0)}: <-url http://ch.io/class/title> [-update]")
     exit(2)
 end
 
+
 loop { case ARGV[0]
     when '-url' then  ARGV.shift; URL = ARGV.shift
-	when '-update' then  ARGV.shift; UPDATE = true
+    when '-update' then  ARGV.shift; UPDATE = true
     when /^-/ then  usage("Unknown option: #{ARGV[0].inspect}")
     else break
 end; }
 
 
 class CH
-	@@useragent = 'Mozilla/5.0'
-	@@cookiesList = {}
-	
+    @@useragent = 'Mozilla/5.0'
+    @@cookiesList = {}
+
+
     def initialize(params = {})
-		log('DEBUG', "CH Initialized (#{params})");
+        log('DEBUG', "CH Initialized (#{params})");
     end
 
 
     def download_new(params = {})
-		url = params.fetch(:url, '')
-		
+        url = params.fetch(:url, '')
+        
         log('INFO', "Starting New Download... (#{url})");
-		
+        
         videos = get_videos_map(url)
-		
-		folder = "#{videos[:title]} (#{videos[:publisher]}) (AUTHOR) (#{videos[:date_release]})"
-		dst = "./downloads/#{folder}"
-		createDir(dst)
-		
-		download_videos(videos, dst)
+        
+        folder = "#{videos[:title]} (#{videos[:publisher]}) (AUTHOR) (#{videos[:date_release]})"
+        dst = "./downloads/#{folder}"
+        createDir(dst)
+        
+        download_videos(videos, dst)
     end
-	
+    
 
     private
         def get_videos_map(url)
-			log('DEBUG', "Getting videos map from course: (#{url})");
-			
+            log('DEBUG', "Getting videos map from course: (#{url})");
+            
             return get_videos_list(url)
         end
-		
+        
 
         def create_meta_file(videos, dst)
-			begin
-				File.open("#{dst}/.metadata.json", 'w') { |file| file.write(JSON.pretty_generate(videos)) }
-			rescue => e
+            begin
+                File.open("#{dst}/.metadata.json", 'w') { |file| file.write(JSON.pretty_generate(videos)) }
+            rescue => e
                   log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
         end
-		
-		
+        
+        
         def download_attachments(attachment_url, dst)
-			unless attachment_url.nil? then
-				log('DEBUG', "Downloading course attachments: #{attachment_url}")
-				
-				codeFilename = 'code.zip'
-				download_file(codeFilename, attachment_url, "#{dst}/#{codeFilename}");
-			end
+            unless attachment_url.nil? then
+                log('DEBUG', "Downloading course attachments: #{attachment_url}")
+                
+                codeFilename = 'code.zip'
+                download_file(codeFilename, attachment_url, "#{dst}/#{codeFilename}");
+            end
         end
-		
+        
 
         def download_videos(videos, dst)
             create_meta_file(videos, dst)
-			download_attachments(videos[:url_code], dst)
-			
+            download_attachments(videos[:url_code], dst)
+            
             videos[:list].each do |name, url|
                 download_file(name, url, "#{dst}/#{name}");
             end
@@ -124,9 +127,9 @@ class CH
 
                   log('INFO', "[#{file_name}] Finished Downloading.")
                 end
-			rescue Net::OpenTimeout => e
+            rescue Net::OpenTimeout => e
                   log('ERROR', "OpenTimeout exception [#{e}]! oh-noes!")
-			rescue Timeout::Error => te
+            rescue Timeout::Error => te
                   log('ERROR', "Timeout exception [#{te}]! oh-noes!")
             rescue => e
                   log('ERROR', "Caught exception [#{e}]! oh-noes!")
@@ -137,39 +140,39 @@ class CH
         def get_videos_list(url)
             page = get_ch_page(url)
 
-			myPlayerArr = page.to_s.split('file: ')[2].split('poster:')[0].to_s[0..-32] + ']'
-			videos_list = JSON.parse(myPlayerArr)
-			
+            myPlayerArr = page.to_s.split('file: ')[2].split('poster:')[0].to_s[0..-32] + ']'
+            videos_list = JSON.parse(myPlayerArr)
+            
             title = page.css('p.hero-description').text
             publisher = page.css('a.course-box-value').text
-			date_added = page.css('.course-box .course-box-item .course-box-value')[3].text.strip
+            date_added = page.css('.course-box .course-box-item .course-box-value')[3].text.strip
 
-			begin
-				url_code = page.css('a.btn[href*="code"]')[0]['href']
-			rescue
-				url_code = nil
-			end
-			
-			begin
-				date_release = page.css('.course-box .course-box-item .course-box-value')[5].text.strip
-			rescue
-				date_release = "_" + date_added + "_"
-			end
+            begin
+                url_code = page.css('a.btn[href*="code"]')[0]['href']
+            rescue
+                url_code = nil
+            end
+            
+            begin
+                date_release = page.css('.course-box .course-box-item .course-box-value')[5].text.strip
+            rescue
+                date_release = "_" + date_added + "_"
+            end
 
             videos = {
                 title: sanitizeString(title),
                 date_now: Time.now.strftime("%d/%m/%Y %H:%M"),
-				date_added: sanitizeString(date_added.gsub('/', '-')),
-				date_release: sanitizeString(date_release.gsub('/', '-')),
-				publisher: sanitizeString(publisher),
-				url: url,
-				url_code: url_code,
+                date_added: sanitizeString(date_added.gsub('/', '-')),
+                date_release: sanitizeString(date_release.gsub('/', '-')),
+                publisher: sanitizeString(publisher),
+                url: url,
+                url_code: url_code,
                 list: {}
             }
-			
+            
             videos_list.each_with_index do |video, index|
                 text = video['title'].gsub(/^([0-9]{1,2})\) /, "").gsub(/ \| .*/, "")
-				video_url = video['file']
+                video_url = video['file']
                 file_extension = File.extname(video_url)
 
                 video_title = "#{index+1} - #{text}#{file_extension}"
@@ -202,11 +205,11 @@ class CH
             http = Net::HTTP.new(uri.host, uri.port)
             http.use_ssl = true
 
-			cookies = cookiesList.map { |key, value| "#{key}=#{value}" }
-			
+            cookies = cookiesList.map { |key, value| "#{key}=#{value}" }
+            
             req = Net::HTTP::Get.new(uri.path, {
                 'User-Agent' => useragent,
-				'Cookie' => cookies.join(';')
+                'Cookie' => cookies.join(';')
             })
             response = http.request(req)
 
@@ -223,17 +226,17 @@ class CH
 
         def sanitizeString(string)
             return string
-		.gsub('&amp;', '&')
-		.gsub(' : ', ' - ')
-		.gsub(': ', ' - ')
-		.gsub('. ', ' - ')
-		.gsub(/\s+/, ' ')
-		.gsub('?', '')
-		.gsub(' .mp4', '.mp4')
-		.gsub(' .webm', '.webm')
-		.gsub('"', "'")
-		.gsub('/', ', ')
-		.strip
+                .gsub('&amp;', '&')
+                .gsub(' : ', ' - ')
+                .gsub(': ', ' - ')
+                .gsub('. ', ' - ')
+                .gsub(/\s+/, ' ')
+                .gsub('?', '')
+                .gsub(' .mp4', '.mp4')
+                .gsub(' .webm', '.webm')
+                .gsub('"', "'")
+                .gsub('/', ', ')
+                .strip
         end
 
         ## Genric way to print verbose
@@ -245,7 +248,7 @@ end
 ch = CH.new()
 
 if UPDATE == true
-	#ch.update()
+    #ch.update()
 else
-	ch.download_new(:url => URL)
+    ch.download_new(:url => URL)
 end
