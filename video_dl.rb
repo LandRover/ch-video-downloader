@@ -7,12 +7,8 @@ require 'net/http'
 require 'nokogiri'
 require 'ruby-progressbar'
 
-url = ''
-update = false
-useragent = 'Mozilla/5.0'
-
-cookiesList = {
-}
+URL = ''
+UPDATE = false
 
 def usage(s)
     $stderr.puts(s)
@@ -21,39 +17,39 @@ def usage(s)
 end
 
 loop { case ARGV[0]
-    when '-url' then  ARGV.shift; url = ARGV.shift
-	when '-update' then  ARGV.shift; update = true
+    when '-url' then  ARGV.shift; URL = ARGV.shift
+	when '-update' then  ARGV.shift; UPDATE = true
     when /^-/ then  usage("Unknown option: #{ARGV[0].inspect}")
     else break
 end; }
 
 
 class CH
-    @url = ''
-    @useragent = ''
-	@update = false
-	@cookiesList = {}
-    @tmp_downloades = ''
-
+	@@useragent = 'Mozilla/5.0'
+	@@cookiesList = {
+	}
+	
+    @@tmp_downloades = ''
 
     def initialize(params = {})
-        @url = params.fetch(:url, '')
-        @update = params.fetch(:update, '')
-		@useragent = params.fetch(:useragent, '')
-		@cookiesList = params.fetch(:cookiesList, {})
+		log('DEBUG', "CH Initialized (#{params})");
     end
 
 
-    def download_new
-        log('INFO', "Starting #{@url}");
+    def download_new(params = {})
+		url = params.fetch(:url, '')
+		
+        log('INFO', "Starting #{url}");
+		log('INFO', "cookiesList #@@cookiesList");
+		
 
-        load_videos();
+        load_videos(url);
     end
 	
 
     private
-        def load_videos()
-            videos = get_videos_list()
+        def load_videos(url)
+            videos = get_videos_list(url)
 
             return download(videos)
         end
@@ -61,22 +57,22 @@ class CH
 
         def download(videos)
 			folder = "#{videos[:title]} (#{videos[:publisher]}) (AUTHOR) (#{videos[:date_release]})"
-            @tmp_downloades = "./downloads/#{folder}"
-            createDir(@tmp_downloades)
+            @@tmp_downloades = "./downloads/#{folder}"
+            createDir(@@tmp_downloades)
 			
-            File.open("#{@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nURL: #{videos[:url]}\nPublisher: #{videos[:publisher]}\nCode files: #{videos[:url_code]}\nEpisodes:#{videos[:list]}\n") }
+            File.open("#{@@tmp_downloades}/.meta", 'w') { |file| file.write("Title: #{videos[:title]}\nURL: #{videos[:url]}\nPublisher: #{videos[:publisher]}\nCode files: #{videos[:url_code]}\nEpisodes:#{videos[:list]}\n") }
 			
 			## download code.
 			unless videos[:url_code].nil? then
 				codeFilename = 'code.zip'
-				download_file(codeFilename, videos[:url_code], "#{@tmp_downloades}/#{codeFilename}");
+				download_file(codeFilename, videos[:url_code], "#{@@tmp_downloades}/#{codeFilename}");
 			end
 
             videos[:list].each do |name, url|
-                download_file(name, url, "#{@tmp_downloades}/#{name}");
+                download_file(name, url, "#{@@tmp_downloades}/#{name}");
             end
 
-            log('INFO', "Done downloading: #{@url}")
+            log('INFO', "Done downloading: #{@@url}")
         end
 
 
@@ -127,9 +123,9 @@ class CH
         end
 
 
-        def get_videos_list()
-            page = get_ch_page()
-			#videos_selector = page.css('script[type="application/ld+json"]')[0].to_s[35..-10]
+        def get_videos_list(url)
+            page = get_ch_page(url)
+
 			myPlayerArr = page.to_s.split('file: ')[2].split('poster:')[0].to_s[0..-32] + ']'
 			videos_list = JSON.parse(myPlayerArr)
 			
@@ -154,7 +150,7 @@ class CH
                 date_added: sanitizeString(date_added.gsub('/', '-')),
 				date_release: sanitizeString(date_release.gsub('/', '-')),
 				publisher: sanitizeString(publisher),
-				url: @url,
+				url: url,
 				url_code: url_code,
                 list: {}
             }
@@ -178,8 +174,8 @@ class CH
         end
 
 
-        def get_ch_page()
-            markup = get_html_markup(@url, @useragent, @cookiesList);
+        def get_ch_page(url)
+            markup = get_html_markup(url, @@useragent, @@cookiesList);
             page = Nokogiri::HTML(markup)
 
             return page
@@ -234,10 +230,10 @@ class CH
         end
 end
 
-ch = CH.new(:url => url, :update => update, :useragent => useragent, :cookiesList => cookiesList)
+ch = CH.new()
 
-if update == true
-	ch.update()
+if UPDATE == true
+	#ch.update()
 else
-	ch.download_new()
+	ch.download_new(:url => URL)
 end
