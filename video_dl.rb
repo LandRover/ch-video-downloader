@@ -38,10 +38,28 @@ class CH
     end
 
 
+    def download_update(params = {})
+        log('INFO', "Starting Update Download... (#{params})");
+
+		url = get_url_from_metadata()
+
+        if (url == nil)
+            url = params.fetch(:url, nil)
+        end
+
+        throw :missingURLForCourse if (url == nil || url == '')
+        
+        log('INFO', "Detected URL of a course from metadata: (#{url})");
+
+        videos = get_videos_list(url)
+        download_videos(videos)
+    end
+
+
     def download_new(params = {})
         url = params.fetch(:url, '')
         
-        log('INFO', "Starting New Download... (#{url})");
+        log('INFO', "Starting New Download... (#{params})");
         
         videos = get_videos_list(url)
         
@@ -54,7 +72,39 @@ class CH
     
 
     private
-        def create_meta_file(videos, dst)
+        def get_url_from_metadata(dst = '.')
+            return get_url_from_metadata_JSON(dst)
+        end
+
+
+        def get_url_from_metadata_JSON(dst = '.')
+            meta_file = "#{dst}/.metadata.json"
+			url = nil
+
+            if (!File.exist?(meta_file))
+                return url
+            end
+
+            begin
+                file = File.read(meta_file);
+			    videos_metadata = JSON.parse(file)
+				
+				url = videos_metadata['url']
+            rescue => e
+                log('ERROR', "Caught exception [#{e}]! oh-noes!")
+            end
+
+            return url
+        end
+
+
+        def get_url_from_metadata_TEXT(dst)
+            meta_file = "#{dst}/.meta"
+
+        end
+
+
+        def create_meta_file(videos, dst = '.')
             meta_file = "#{dst}/.metadata.json"
 			
             begin
@@ -62,12 +112,12 @@ class CH
 				
                 File.open(meta_file, 'w') { |file| file.write(JSON.pretty_generate(videos)) }
             rescue => e
-                  log('ERROR', "Caught exception [#{e}]! oh-noes!")
+                log('ERROR', "Caught exception [#{e}]! oh-noes!")
             end
         end
 
 
-        def download_attachments(attachment_url, dst)
+        def download_attachments(attachment_url, dst = '.')
             unless attachment_url.nil? then
                 log('DEBUG', "Downloading course attachments: #{attachment_url}")
                 
@@ -77,7 +127,7 @@ class CH
         end
 
 
-        def download_videos(videos, dst)
+        def download_videos(videos, dst = '.')
             create_meta_file(videos, dst)
             download_attachments(videos[:url_code], dst)
             
@@ -255,7 +305,7 @@ end
 ch = CH.new()
 
 if update == true
-    ch.update(:url => url)
+    ch.download_update(:url => url)
 else
     ch.download_new(:url => url)
 end
